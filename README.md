@@ -2,7 +2,7 @@
 
 输入一个或一批项目名称，系统按配置访问 9 个主流标讯平台，保存搜索结果与公告详情证据，生成可校验的归档包，并通过邮件或 JiuwenSwarm 频道交付。
 
-> 当前阶段：**工程基线 / simulation-first**。仓库已经提供可运行的模拟闭环、完整文档结构、九平台 Adapter 协议、JiuwenSwarm Skill/SwarmFlow 接入骨架。真实平台自动化将在 Adapter 验证通过后逐个平台启用，不在未验证时宣称可用。
+> 当前阶段：**工程基线 / simulation-first + 单平台 experimental-live**。仓库已经提供可运行的九平台模拟闭环，以及中国铁塔电子采购平台首个真实 Playwright Adapter。真实 Adapter 仍默认关闭，在完成受控浏览器回归前不宣称生产可用。
 
 ## 为什么不是普通标讯聚合器
 
@@ -35,7 +35,7 @@
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -e '.[dev]'
 
 # 运行模拟闭环：创建任务 → 9 平台并行执行 → 生成证据 → 打包 ZIP
@@ -56,6 +56,31 @@ python -m compileall src skills
 - 名称包含“未命中”：模拟查询无结果；
 - 名称包含“失败”：模拟平台执行异常。
 
+## 中国铁塔电子采购平台实验模式
+
+该命令只访问公开采购公告页面，不执行登录、采购文件领取、付款、报名或投标。
+
+```bash
+pip install -e '.[dev,browser]'
+playwright install chromium
+
+bid-screenshot tower-eproc \
+  --acknowledge-experimental \
+  --query "项目名称" \
+  --headed
+```
+
+可选参数：
+
+- `--user-data-dir <path>`：使用隔离 Chrome Profile；
+- `--timeout-ms 45000`：调整页面操作超时；
+- 多次使用 `--query`：批量查询多个名称；
+- 去掉 `--headed`：无头模式运行。
+
+实验模式的 `summary.json`、`manifest.json` 和报告会标记为 `experimental-live`；若页面既无合法详情链接也无明确无结果状态，系统返回 `PAGE_CHANGED`，不会误报 `NOT_FOUND`。
+
+实现和限制见 [`docs/reports/china-tower-eproc-implementation-2026-07-20.md`](docs/reports/china-tower-eproc-implementation-2026-07-20.md)。
+
 ## 目录
 
 ```text
@@ -65,7 +90,7 @@ python -m compileall src skills
 ├── config/                           # 平台与 JiuwenSwarm/MCP 配置样例
 ├── skills/bid-screenshot/            # JiuwenSwarm Skill + SwarmFlow
 ├── src/bid_screenshot_assistant/     # 可运行 Python 项目骨架
-├── tests/                            # 基线测试
+├── tests/                            # 基线与平台契约测试
 └── .github/workflows/ci.yml          # 持续集成
 ```
 
@@ -79,4 +104,4 @@ python -m compileall src skills
 
 ## 当前边界
 
-当前代码没有绕过验证码、风控或登录控制；没有声称已经稳定抓取九个平台；没有将模拟快照作为真实公告证据。真实 Adapter 必须通过平台回归样例、人工接管路径与合规评审后才能从 `experimental` 升级为 `enabled`。
+当前代码没有绕过验证码、风控或登录控制；没有声称已经稳定抓取九个平台；没有将模拟快照作为真实公告证据。中国铁塔 Adapter 已实现并通过 Fixture/状态机测试，但尚未完成 10+ 真实浏览器样例，因此继续保持 `experimental / disabled`。其他真实 Adapter 必须通过平台回归样例、人工接管路径与合规评审后才能从 `experimental` 升级为 `enabled`。
