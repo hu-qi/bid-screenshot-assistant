@@ -83,16 +83,18 @@ CHINA_UNICOM_PROFILE = PlatformBrowserProfile(
         expected_path_prefix="/bidInformation",
     ),
     detail_url_patterns=(
-        r"https://(?:www\.)?chinaunicombidding\.cn/bidInformation/detail\?id=\d+",
+        r"https://(?:www\.)?chinaunicombidding\.cn/bidInformation/detail\?(?:cid=\d+&)?id=\d+",
     ),
     detail_fingerprint=PageFingerprint(
         required_text=("发布时间",),
         any_text=("招标编号", "采购项目编号", "采购代理编号"),
         expected_path_prefix="/bidInformation/detail",
     ),
+    no_result_markers=("暂无数据", "暂无公告", "没有符合条件的公告", "无匹配数据"),
     notes=(
         "The list page is an Ant Design single-page application.",
         "A static/non-browser client may see a JavaScript notice or error code 501.",
+        "Historical detail links may include cid before the numeric id parameter.",
     ),
 )
 
