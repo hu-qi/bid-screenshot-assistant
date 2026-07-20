@@ -7,6 +7,7 @@ from pathlib import Path
 
 from bid_screenshot_assistant.adapters import (
     build_china_tower_eproc_registry,
+    build_china_unicom_registry,
     build_simulation_registry,
 )
 from bid_screenshot_assistant.config import settings
@@ -27,19 +28,35 @@ def build_parser() -> argparse.ArgumentParser:
         "tower-eproc",
         help="Run the experimental China Tower public-announcement adapter",
     )
-    tower.add_argument("--query", action="append", required=True, help="Project/query name")
-    tower.add_argument("--task-name", default="中国铁塔电子采购平台实验任务")
-    tower.add_argument("--artifact-root", type=Path, default=settings.artifact_root)
-    tower.add_argument("--user-data-dir", type=Path)
-    tower.add_argument("--timeout-ms", type=int, default=45_000)
-    tower.add_argument("--headed", action="store_true", help="Show the Chromium window")
-    tower.add_argument(
+    _add_experimental_browser_arguments(
+        tower,
+        default_task_name="中国铁塔电子采购平台实验任务",
+    )
+
+    unicom = subparsers.add_parser(
+        "unicom",
+        help="Run the experimental China Unicom public-announcement adapter",
+    )
+    _add_experimental_browser_arguments(
+        unicom,
+        default_task_name="中国联通采购与招标网实验任务",
+    )
+    return parser
+
+
+def _add_experimental_browser_arguments(parser, *, default_task_name: str) -> None:
+    parser.add_argument("--query", action="append", required=True, help="Project/query name")
+    parser.add_argument("--task-name", default=default_task_name)
+    parser.add_argument("--artifact-root", type=Path, default=settings.artifact_root)
+    parser.add_argument("--user-data-dir", type=Path)
+    parser.add_argument("--timeout-ms", type=int, default=45_000)
+    parser.add_argument("--headed", action="store_true", help="Show the Chromium window")
+    parser.add_argument(
         "--acknowledge-experimental",
         action="store_true",
         required=True,
         help="Acknowledge that the live adapter is experimental and public pages may change",
     )
-    return parser
 
 
 async def run_demo(args) -> int:
@@ -55,20 +72,16 @@ async def run_demo(args) -> int:
     return 0
 
 
-async def run_tower_eproc(args) -> int:
+async def run_experimental_single_platform(args, platform_id: PlatformId, registry) -> int:
     task = Task(
         request=TaskCreate(
             name=args.task_name,
             query_names=args.query,
-            platform_ids=[PlatformId.CHINA_TOWER_EPROC],
+            platform_ids=[platform_id],
         )
     )
     runner = TaskRunner(
-        registry=build_china_tower_eproc_registry(
-            headless=not args.headed,
-            timeout_ms=args.timeout_ms,
-            user_data_dir=args.user_data_dir,
-        ),
+        registry=registry,
         artifact_root=args.artifact_root,
         max_parallel=1,
         execution_mode="experimental-live",
@@ -78,12 +91,38 @@ async def run_tower_eproc(args) -> int:
     return 0
 
 
+def _browser_options(args) -> dict:
+    return {
+        "headless": not args.headed,
+        "timeout_ms": args.timeout_ms,
+        "user_data_dir": args.user_data_dir,
+    }
+
+
 def main() -> None:
     args = build_parser().parse_args()
     if args.command == "demo":
         raise SystemExit(asyncio.run(run_demo(args)))
     if args.command == "tower-eproc":
-        raise SystemExit(asyncio.run(run_tower_eproc(args)))
+        raise SystemExit(
+            asyncio.run(
+                run_experimental_single_platform(
+                    args,
+                    PlatformId.CHINA_TOWER_EPROC,
+                    build_china_tower_eproc_registry(**_browser_options(args)),
+                )
+            )
+        )
+    if args.command == "unicom":
+        raise SystemExit(
+            asyncio.run(
+                run_experimental_single_platform(
+                    args,
+                    PlatformId.CHINA_UNICOM,
+                    build_china_unicom_registry(**_browser_options(args)),
+                )
+            )
+        )
     raise SystemExit(2)
 
 
