@@ -10,6 +10,7 @@ from bid_screenshot_assistant.adapters import (
     build_china_mobile_registry,
     build_china_tower_eproc_registry,
     build_china_unicom_registry,
+    build_gd_gp_registry,
     build_simulation_registry,
 )
 from bid_screenshot_assistant.config import settings
@@ -31,6 +32,7 @@ def build_parser() -> argparse.ArgumentParser:
         ("tower-eproc", "China Tower", "中国铁塔电子采购平台实验任务"),
         ("unicom", "China Unicom", "中国联通采购与招标网实验任务"),
         ("cebpubservice", "CEB Public Service", "中国招标投标公共服务平台实验任务"),
+        ("gd-gp", "Guangdong Government Procurement", "广东政府采购智慧云平台实验任务"),
     )
     for command, label, task_name in commands:
         sub = subparsers.add_parser(
@@ -106,6 +108,7 @@ def main() -> None:
         "tower-eproc": (PlatformId.CHINA_TOWER_EPROC, build_china_tower_eproc_registry),
         "unicom": (PlatformId.CHINA_UNICOM, build_china_unicom_registry),
         "cebpubservice": (PlatformId.CEBPUBSERVICE, build_cebpubservice_registry),
+        "gd-gp": (PlatformId.GD_GP, build_gd_gp_registry),
     }
     if args.command in handlers:
         platform_id, factory = handlers[args.command]
