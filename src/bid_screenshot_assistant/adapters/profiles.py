@@ -59,11 +59,20 @@ CHINA_MOBILE_PROFILE = PlatformBrowserProfile(
         any_text=("正在招标", "即将开标", "正在候选人公示"),
         expected_path_prefix="/",
     ),
-    # The live result/detail URL shape has not yet been verified in Playwright.
-    detail_url_patterns=(),
-    detail_fingerprint=PageFingerprint(),
-    no_result_markers=("无匹配数据",),
-    notes=("Do not classify the initial homepage empty state as NOT_FOUND.",),
+    detail_url_patterns=(
+        r"https://b2b\.10086\.cn/b2b/main/viewNoticeContent\.html\?noticeBean\.id=\d+",
+        r"https://b2b\.10086\.cn/b2b/main/viewVendorNoticeContent\.html\?noticeBean\.id=\d+",
+    ),
+    detail_fingerprint=PageFingerprint(
+        any_text=("发布时间", "发布日期", "公告", "公示"),
+        expected_path_prefix="/b2b/main/view",
+    ),
+    no_result_markers=("无匹配数据", "暂无数据", "暂无相关公告"),
+    notes=(
+        "Do not classify the initial homepage empty state as NOT_FOUND.",
+        "Legacy public detail URL patterns remain candidate-only until live Playwright regression.",
+        "The authenticated electronic bidding system is outside this public search adapter.",
+    ),
 )
 
 
