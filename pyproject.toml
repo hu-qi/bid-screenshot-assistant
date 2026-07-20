@@ -10,6 +10,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 authors = [{ name = "hu-qi" }]
 dependencies = [
+  "beautifulsoup4>=4.12,<5.0",
   "fastapi>=0.115,<1.0",
   "pydantic>=2.10,<3.0",
   "pydantic-settings>=2.7,<3.0",
@@ -17,6 +18,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+browser = [
+  "playwright>=1.50,<2.0",
+]
 dev = [
   "httpx>=0.28,<1.0",
   "pytest>=8.3,<10.0",
