@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from bid_screenshot_assistant.adapters.base import AdapterRegistry
 from bid_screenshot_assistant.adapters.mock import SimulationPlatformAdapter
 from bid_screenshot_assistant.domain.models import PlatformDescriptor, PlatformId
@@ -48,5 +50,34 @@ DESCRIPTORS = [
 ]
 
 
+def get_descriptor(platform_id: PlatformId) -> PlatformDescriptor:
+    try:
+        return next(item for item in DESCRIPTORS if item.platform_id == platform_id)
+    except StopIteration as exc:
+        raise KeyError(f"No descriptor registered for {platform_id}") from exc
+
+
 def build_simulation_registry() -> AdapterRegistry:
     return AdapterRegistry([SimulationPlatformAdapter(descriptor) for descriptor in DESCRIPTORS])
+
+
+def build_china_tower_eproc_registry(
+    *,
+    headless: bool = True,
+    timeout_ms: int = 45_000,
+    user_data_dir: Path | None = None,
+) -> AdapterRegistry:
+    """Build an explicit experimental registry containing only the real Tower adapter."""
+    from bid_screenshot_assistant.adapters.china_tower_eproc import ChinaTowerEprocAdapter
+
+    descriptor = get_descriptor(PlatformId.CHINA_TOWER_EPROC)
+    return AdapterRegistry(
+        [
+            ChinaTowerEprocAdapter(
+                descriptor,
+                headless=headless,
+                timeout_ms=timeout_ms,
+                user_data_dir=user_data_dir,
+            )
+        ]
+    )
