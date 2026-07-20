@@ -44,6 +44,8 @@ DESCRIPTORS = [
     PlatformDescriptor(
         platform_id=PlatformId.GD_GP,
         display_name="广东政府采购智慧云平台",
+        supports_date_filter=True,
+        supports_notice_type_filter=True,
     ),
     PlatformDescriptor(
         platform_id=PlatformId.GD_GGZY,
@@ -72,7 +74,14 @@ def build_china_mobile_registry(
     from bid_screenshot_assistant.adapters.china_mobile import ChinaMobileAdapter
 
     return AdapterRegistry(
-        [ChinaMobileAdapter(get_descriptor(PlatformId.CHINA_MOBILE), headless=headless, timeout_ms=timeout_ms, user_data_dir=user_data_dir)]
+        [
+            ChinaMobileAdapter(
+                get_descriptor(PlatformId.CHINA_MOBILE),
+                headless=headless,
+                timeout_ms=timeout_ms,
+                user_data_dir=user_data_dir,
+            )
+        ]
     )
 
 
@@ -85,7 +94,14 @@ def build_china_tower_eproc_registry(
     from bid_screenshot_assistant.adapters.china_tower_eproc import ChinaTowerEprocAdapter
 
     return AdapterRegistry(
-        [ChinaTowerEprocAdapter(get_descriptor(PlatformId.CHINA_TOWER_EPROC), headless=headless, timeout_ms=timeout_ms, user_data_dir=user_data_dir)]
+        [
+            ChinaTowerEprocAdapter(
+                get_descriptor(PlatformId.CHINA_TOWER_EPROC),
+                headless=headless,
+                timeout_ms=timeout_ms,
+                user_data_dir=user_data_dir,
+            )
+        ]
     )
 
 
@@ -98,7 +114,14 @@ def build_china_unicom_registry(
     from bid_screenshot_assistant.adapters.china_unicom import ChinaUnicomAdapter
 
     return AdapterRegistry(
-        [ChinaUnicomAdapter(get_descriptor(PlatformId.CHINA_UNICOM), headless=headless, timeout_ms=timeout_ms, user_data_dir=user_data_dir)]
+        [
+            ChinaUnicomAdapter(
+                get_descriptor(PlatformId.CHINA_UNICOM),
+                headless=headless,
+                timeout_ms=timeout_ms,
+                user_data_dir=user_data_dir,
+            )
+        ]
     )
 
 
@@ -112,5 +135,33 @@ def build_cebpubservice_registry(
     from bid_screenshot_assistant.adapters.cebpubservice import CebpubserviceAdapter
 
     return AdapterRegistry(
-        [CebpubserviceAdapter(get_descriptor(PlatformId.CEBPUBSERVICE), headless=headless, timeout_ms=timeout_ms, user_data_dir=user_data_dir)]
+        [
+            CebpubserviceAdapter(
+                get_descriptor(PlatformId.CEBPUBSERVICE),
+                headless=headless,
+                timeout_ms=timeout_ms,
+                user_data_dir=user_data_dir,
+            )
+        ]
+    )
+
+
+def build_gd_gp_registry(
+    *,
+    headless: bool = True,
+    timeout_ms: int = 45_000,
+    user_data_dir: Path | None = None,
+) -> AdapterRegistry:
+    """Build an explicit experimental registry containing only the Guangdong GP adapter."""
+    from bid_screenshot_assistant.adapters.gd_gp import GdGpAdapter
+
+    return AdapterRegistry(
+        [
+            GdGpAdapter(
+                get_descriptor(PlatformId.GD_GP),
+                headless=headless,
+                timeout_ms=timeout_ms,
+                user_data_dir=user_data_dir,
+            )
+        ]
     )
