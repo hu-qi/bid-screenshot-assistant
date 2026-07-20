@@ -14,7 +14,13 @@
 - 基线测试与 GitHub Actions。
 - 中国移动、中国联通、中国铁塔电子采购平台的首轮真实入口调查档案。
 - ADR-0004：真实平台优先采用公开浏览器页面契约。
+- 中国铁塔电子采购平台实验性 Playwright Adapter。
+- 中国铁塔列表/详情解析器、官方 URL 边界和附件域名防护。
+- 中国铁塔 FOUND、NOT_FOUND、PARTIAL、PAGE_CHANGED 状态机 Fixture 测试。
+- 受显式确认参数保护的 `bid-screenshot tower-eproc` 实验命令。
+- simulation 与 experimental-live 执行模式在 summary、manifest 和报告中分离记录。
 
 ### Changed
 
 - MVP 实现顺序调整为：中国铁塔电子采购平台 → 中国联通 → 中国移动。
+- 中国铁塔电子采购平台状态更新为 `implemented / fixture-tested / live-regression-pending`，继续默认关闭。
