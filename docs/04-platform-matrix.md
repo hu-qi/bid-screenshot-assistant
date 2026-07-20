@@ -9,21 +9,22 @@
 |---|---|---|---|---|---|
 | `china-mobile` | 中国移动采购与招标网 | 公开首页、候选数字 ID 详情 | implemented / fixture-tested / live-regression-pending | P0 | [查看](platforms/china-mobile.md) |
 | `china-unicom` | 中国联通采购与招标网 | JS 公告列表、数字 ID 详情 | implemented / fixture-tested / live-regression-pending | P0 | [查看](platforms/china-unicom.md) |
-| `china-telecom` | 中国电信阳光采购网 | 待调查 | experimental | P1 | 待创建 |
+| `china-telecom` | 中国电信阳光采购网 | 候选公开查询 API 与详情路由，待真实浏览器确认 | candidate-api-discovered / live-contract-pending | P1 | [查看](platforms/china-telecom.md) |
 | `china-tower-online` | 中国铁塔在线商务平台 | 待调查 | experimental | P1 | 待创建 |
 | `china-tower-eproc` | 中国铁塔电子采购平台 | 公开分类列表与详情 | implemented / fixture-tested / live-regression-pending | P0 | [查看](platforms/china-tower-eproc.md) |
 | `cebpubservice` | 中国招标投标公共服务平台 | 全文/高级检索、五类公告详情 | implemented / fixture-tested / production-live-regression-pending | P1 | [查看](platforms/cebpubservice.md) |
 | `miit` | 工信部通信工程招投标管理平台 | 待调查 | experimental | P1 | 待创建 |
 | `gd-gp` | 广东政府采购智慧云平台 | 公开全文检索/详情 API、门户详情候选路由 | implemented / fixture-tested / live-regression-pending | P1 | [查看](platforms/gd-gp.md) |
-| `gd-ggzy` | 广东省公共资源交易平台 | 入口已确认，交易信息流待浏览器录制 | discovery-pending | P1 | 待创建 |
+| `gd-ggzy` | 广东省公共资源交易平台 | 入口已确认，交易信息流待浏览器录制 | discovery-pending | P1 | [查看](platforms/gd-ggzy.md) |
 
 ## 当前实现状态
 
 1. 中国移动、中国联通、中国铁塔电子采购平台：代码与 Fixture 完成，生产 Chrome 回归待补；
 2. 中国招标投标公共服务平台：代码与 Fixture 完成，生产检索和人工处理流程待回归；
 3. 广东政府采购智慧云平台：代码与 Fixture 完成，公开 API 和门户截图回归待补；
-4. 下一批优先调查广东公共资源、中国电信和工信部；
-5. 中国铁塔在线商务平台按登录授权流程单独处理。
+4. 中国电信已发现候选公开 API 和详情路由，待真实浏览器确认后编码；
+5. 广东公共资源待真实页面录制；
+6. 工信部与中国铁塔在线商务平台待调查。
 
 ## 验证记录要求
 
