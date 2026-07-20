@@ -1,0 +1,325 @@
+from __future__ import annotations
+
+import json
+from datetime import UTC, datetime
+from pathlib import Path
+from time import perf_counter
+
+from bid_screenshot_assistant.adapters.base import PlatformAdapter
+from bid_screenshot_assistant.adapters.profiles import GD_GP_PROFILE
+from bid_screenshot_assistant.domain.models import (
+    AdapterRequest,
+    PlatformDescriptor,
+    PlatformExecutionResult,
+    PlatformRunStatus,
+    SearchHit,
+)
+from bid_screenshot_assistant.services.artifacts import write_artifact
+
+from .driver import GdGpDriverFactory, PlaywrightGdGpDriver
+from .parser import (
+    PageContractError,
+    has_explicit_no_results,
+    match_score,
+    parse_detail_payload,
+    parse_search_payload,
+)
+
+
+class GdGpAdapter(PlatformAdapter):
+    """Experimental adapter for Guangdong government procurement public notices."""
+
+    def __init__(
+        self,
+        descriptor: PlatformDescriptor,
+        *,
+        driver_factory: GdGpDriverFactory | None = None,
+        headless: bool = True,
+        timeout_ms: int = 45_000,
+        user_data_dir: Path | None = None,
+    ) -> None:
+        self.descriptor = descriptor
+        self.profile = GD_GP_PROFILE
+        self.driver_factory = driver_factory or (
+            lambda: PlaywrightGdGpDriver(
+                self.profile,
+                headless=headless,
+                timeout_ms=timeout_ms,
+                user_data_dir=user_data_dir,
+            )
+        )
+
+    async def execute(
+        self,
+        request: AdapterRequest,
+        item_dir: Path,
+    ) -> PlatformExecutionResult:
+        started_at = datetime.now(UTC)
+        started_perf = perf_counter()
+        artifacts = []
+        hits: list[SearchHit] = []
+        detail_errors: list[dict[str, str]] = []
+        portal_errors: list[dict[str, str]] = []
+        current_step = "start"
+
+        try:
+            async with self.driver_factory() as driver:
+                current_step = "search_api"
+                search_snapshot = await driver.search(request.query_name)
+                artifacts.append(
+                    write_artifact(
+                        item_dir=item_dir,
+                        filename="result-api-page.png",
+                        content=search_snapshot.screenshot,
+                        kind="result-page",
+                        mime_type="image/png",
+                        source_url=search_snapshot.url,
+                        simulation=False,
+                    )
+                )
+
+                entries = parse_search_payload(search_snapshot.body_text, self.profile)
+                ranked = [
+                    (*match_score(request.query_name, entry.title), entry) for entry in entries
+                ]
+                ranked.sort(key=lambda item: item[0], reverse=True)
+                selected = ranked[: request.max_hits]
+
+                if not selected:
+                    if has_explicit_no_results(search_snapshot.body_text):
+                        return self._result(
+                            request=request,
+                            started_at=started_at,
+                            started_perf=started_perf,
+                            status=PlatformRunStatus.NOT_FOUND,
+                            current_step="search_complete",
+                            artifacts=artifacts,
+                            hits=[],
+                            feedback="Official public search API completed with zero result rows.",
+                            retryable=False,
+                        )
+                    raise PageContractError(
+                        "Search response contained no valid records and no explicit empty result"
+                    )
+
+                for index, (score, reason, entry) in enumerate(selected, start=1):
+                    current_step = f"detail_api_{index:03d}"
+                    try:
+                        detail_snapshot = await driver.fetch_detail_api(entry.detail_api_url)
+                        detail = parse_detail_payload(
+                            detail_snapshot.body_text,
+                            entry.detail_api_url,
+                            self.profile,
+                        )
+                        artifacts.extend(
+                            self._write_detail_artifacts(
+                                item_dir=item_dir,
+                                index=index,
+                                snapshot=detail_snapshot,
+                                detail=detail,
+                                entry=entry,
+                            )
+                        )
+                        hits.append(
+                            SearchHit(
+                                title=detail.title,
+                                source_url=entry.portal_url,
+                                published_at=detail.published_at or entry.published_at,
+                                notice_type=detail.notice_type or entry.notice_type,
+                                match_score=score,
+                                match_reason=reason,
+                            )
+                        )
+                    except Exception as exc:
+                        detail_errors.append(
+                            {
+                                "record_id": entry.record_id,
+                                "url": entry.detail_api_url,
+                                "error_code": type(exc).__name__,
+                                "message": str(exc),
+                            }
+                        )
+                        hits.append(
+                            SearchHit(
+                                title=entry.title,
+                                source_url=entry.portal_url,
+                                published_at=entry.published_at,
+                                notice_type=entry.notice_type,
+                                match_score=score,
+                                match_reason=f"{reason}; detail API capture failed",
+                            )
+                        )
+                        continue
+
+                    current_step = f"portal_{index:03d}"
+                    try:
+                        portal_snapshot = await driver.fetch_portal(entry.portal_url)
+                        artifacts.append(
+                            write_artifact(
+                                item_dir=item_dir,
+                                filename=f"detail-{index:03d}.png",
+                                content=portal_snapshot.screenshot,
+                                kind="detail-page",
+                                mime_type="image/png",
+                                source_url=portal_snapshot.url,
+                                simulation=False,
+                            )
+                        )
+                    except Exception as exc:
+                        portal_errors.append(
+                            {
+                                "record_id": entry.record_id,
+                                "url": entry.portal_url,
+                                "error_code": type(exc).__name__,
+                                "message": str(exc),
+                            }
+                        )
+
+                diagnostics = detail_errors + portal_errors
+                if diagnostics:
+                    artifacts.append(
+                        self._write_json_artifact(
+                            item_dir=item_dir,
+                            filename="capture-errors.json",
+                            payload={
+                                "detail_api_errors": detail_errors,
+                                "portal_page_errors": portal_errors,
+                            },
+                            kind="execution-diagnostics",
+                            source_url=search_snapshot.url,
+                        )
+                    )
+                    return self._result(
+                        request=request,
+                        started_at=started_at,
+                        started_perf=started_perf,
+                        status=PlatformRunStatus.PARTIAL,
+                        current_step="complete_with_errors",
+                        artifacts=artifacts,
+                        hits=hits,
+                        feedback=(
+                            f"Collected {len(hits)} official list records; "
+                            f"{len(detail_errors)} detail API and {len(portal_errors)} portal captures failed."
+                        ),
+                        error_code="DETAIL_OR_PORTAL_CAPTURE_FAILED",
+                        retryable=True,
+                    )
+
+                return self._result(
+                    request=request,
+                    started_at=started_at,
+                    started_perf=started_perf,
+                    status=PlatformRunStatus.FOUND,
+                    current_step="complete",
+                    artifacts=artifacts,
+                    hits=hits,
+                    feedback=f"Collected {len(hits)} official detail API and portal page evidence sets.",
+                    retryable=False,
+                )
+        except PageContractError as exc:
+            return self._result(
+                request=request,
+                started_at=started_at,
+                started_perf=started_perf,
+                status=PlatformRunStatus.PAGE_CHANGED,
+                current_step=current_step,
+                artifacts=artifacts,
+                hits=hits,
+                feedback=str(exc),
+                error_code="PAGE_CONTRACT_MISMATCH",
+                retryable=False,
+            )
+        except Exception as exc:
+            is_timeout = type(exc).__name__ == "TimeoutError"
+            return self._result(
+                request=request,
+                started_at=started_at,
+                started_perf=started_perf,
+                status=(
+                    PlatformRunStatus.TIMEOUT if is_timeout else PlatformRunStatus.PLATFORM_ERROR
+                ),
+                current_step=current_step,
+                artifacts=artifacts,
+                hits=hits,
+                feedback=str(exc),
+                error_code=type(exc).__name__,
+                retryable=True,
+            )
+
+    def _write_detail_artifacts(self, *, item_dir, index, snapshot, detail, entry):
+        api_screenshot = write_artifact(
+            item_dir=item_dir,
+            filename=f"detail-{index:03d}.api.png",
+            content=snapshot.screenshot,
+            kind="detail-api-page",
+            mime_type="image/png",
+            source_url=snapshot.url,
+            simulation=False,
+        )
+        metadata = self._write_json_artifact(
+            item_dir=item_dir,
+            filename=f"detail-{index:03d}.json",
+            payload={
+                "record_id": entry.record_id,
+                "title": detail.title,
+                "published_at": detail.published_at,
+                "notice_type": detail.notice_type,
+                "purchaser": detail.purchaser,
+                "project_code": detail.project_code,
+                "purchase_manner": detail.purchase_manner,
+                "budget": detail.budget,
+                "detail_api_url": entry.detail_api_url,
+                "portal_url": entry.portal_url,
+                "attachment_urls": detail.attachment_urls,
+                "body_excerpt": detail.body_text[:1500],
+            },
+            kind="detail-metadata",
+            source_url=snapshot.url,
+        )
+        return [api_screenshot, metadata]
+
+    @staticmethod
+    def _write_json_artifact(*, item_dir, filename, payload, kind, source_url):
+        content = (json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n").encode()
+        return write_artifact(
+            item_dir=item_dir,
+            filename=filename,
+            content=content,
+            kind=kind,
+            mime_type="application/json",
+            source_url=source_url,
+            simulation=False,
+        )
+
+    @staticmethod
+    def _result(
+        *,
+        request,
+        started_at,
+        started_perf,
+        status,
+        current_step,
+        artifacts,
+        hits,
+        feedback,
+        retryable,
+        error_code=None,
+    ):
+        finished_at = datetime.now(UTC)
+        return PlatformExecutionResult(
+            query_id=request.query_id,
+            query_name=request.query_name,
+            platform_id=request.platform_id,
+            status=status,
+            hits=hits,
+            artifacts=artifacts,
+            started_at=started_at,
+            finished_at=finished_at,
+            duration_ms=max(1, int((perf_counter() - started_perf) * 1000)),
+            current_step=current_step,
+            feedback=feedback,
+            error_code=error_code,
+            retryable=retryable,
+            browser_session_id=request.browser_session_id,
+            attempt=request.attempt,
+        )
