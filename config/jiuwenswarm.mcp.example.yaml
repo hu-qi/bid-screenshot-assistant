@@ -1,0 +1,7 @@
+mcp:
+  servers:
+    - name: bid-screenshot-assistant
+      enabled: true
+      transport: streamable-http
+      url: http://127.0.0.1:8000/mcp
+      timeout_s: 600

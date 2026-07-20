@@ -1,0 +1,46 @@
+platforms:
+  - id: china-mobile
+    name: 中国移动采购与招标网
+    stage: experimental
+    enabled: false
+    requires_login: false
+  - id: china-unicom
+    name: 中国联通采购与招标网
+    stage: experimental
+    enabled: false
+    requires_login: false
+  - id: china-telecom
+    name: 中国电信阳光采购网
+    stage: experimental
+    enabled: false
+    requires_login: false
+  - id: china-tower-online
+    name: 中国铁塔在线商务平台
+    stage: experimental
+    enabled: false
+    requires_login: true
+  - id: china-tower-eproc
+    name: 中国铁塔电子采购平台
+    stage: experimental
+    enabled: false
+    requires_login: false
+  - id: cebpubservice
+    name: 中国招标投标公共服务平台
+    stage: experimental
+    enabled: false
+    requires_login: false
+  - id: miit
+    name: 工信部通信工程建设项目招标投标管理信息平台
+    stage: experimental
+    enabled: false
+    requires_login: false
+  - id: gd-gp
+    name: 广东政府采购智慧云平台
+    stage: experimental
+    enabled: false
+    requires_login: false
+  - id: gd-ggzy
+    name: 广东省公共资源交易平台
+    stage: experimental
+    enabled: false
+    requires_login: false

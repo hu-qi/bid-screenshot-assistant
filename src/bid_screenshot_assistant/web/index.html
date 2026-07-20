@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>标讯截图助手</title>
+  <style>
+    :root{--bg:#f5f7fa;--surface:#fff;--text:#172033;--muted:#5b667a;--border:#dce2ea;--brand:#2457d6;--success:#16845b;--danger:#c23934;--radius:10px}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.6 Inter,"PingFang SC","Microsoft YaHei",sans-serif}
+    header{height:64px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:14px}header strong{font-size:18px}.badge{padding:2px 8px;border-radius:999px;background:#e9efff;color:var(--brand);font-size:12px}
+    main{max-width:1180px;margin:32px auto;padding:0 20px}.grid{display:grid;grid-template-columns:1.2fr .8fr;gap:20px}.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;box-shadow:0 6px 20px rgba(23,32,51,.06)}h1{font-size:24px;margin:0 0 8px}h2{font-size:17px;margin:0 0 16px}.muted{color:var(--muted)}label{display:block;font-weight:600;margin:14px 0 6px}input,textarea{width:100%;border:1px solid var(--border);border-radius:7px;padding:10px 12px;font:inherit}textarea{min-height:180px;resize:vertical}button{margin-top:16px;border:0;border-radius:7px;padding:10px 16px;background:var(--brand);color:white;font-weight:600;cursor:pointer}button:disabled{opacity:.5}.platforms{display:grid;gap:9px}.platform{display:flex;justify-content:space-between;border-bottom:1px solid #edf0f4;padding:8px 0}.status{font-size:12px;color:var(--muted)}pre{white-space:pre-wrap;background:#f8fafc;border:1px solid var(--border);border-radius:7px;padding:12px;max-height:280px;overflow:auto}@media(max-width:850px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<header><strong>标讯截图助手</strong><span class="badge">simulation baseline</span></header>
+<main>
+  <h1>创建一次九平台证据采集任务</h1>
+  <p class="muted">当前页面验证任务输入、平台目录和模拟 API 闭环；不会访问真实标讯网站。</p>
+  <div class="grid">
+    <section class="panel">
+      <h2>新增任务</h2>
+      <label for="taskName">任务名称</label>
+      <input id="taskName" value="标讯截图演示任务" />
+      <label for="queries">查询名称（每行一个）</label>
+      <textarea id="queries">广州市某智慧园区项目</textarea>
+      <button id="run">创建并运行</button>
+      <pre id="output">等待执行…</pre>
+    </section>
+    <aside class="panel">
+      <h2>平台目录</h2>
+      <div id="platforms" class="platforms"></div>
+    </aside>
+  </div>
+</main>
+<script>
+const output=document.querySelector('#output');
+async function loadPlatforms(){const r=await fetch('/api/platforms');const items=await r.json();document.querySelector('#platforms').innerHTML=items.map(x=>`<div class="platform"><span>${x.display_name}</span><span class="status">${x.stage}</span></div>`).join('')}
+async function execute(){const button=document.querySelector('#run');button.disabled=true;output.textContent='执行中…';try{const names=document.querySelector('#queries').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);const created=await fetch('/api/tasks',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name:document.querySelector('#taskName').value,query_names:names})}).then(r=>r.json());const run=await fetch(`/api/tasks/${created.task_id}/run`,{method:'POST'}).then(r=>r.json());output.textContent=JSON.stringify({task_id:created.task_id,run_id:run.run_id,status:run.status,counts:run.counts,archive_path:run.archive_path},null,2)}catch(e){output.textContent=String(e)}finally{button.disabled=false}}
+document.querySelector('#run').addEventListener('click',execute);loadPlatforms();
+</script>
+</body></html>
