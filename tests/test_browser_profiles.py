@@ -2,6 +2,7 @@ import pytest
 
 from bid_screenshot_assistant.adapters.profiles import (
     BROWSER_PROFILES,
+    CEBPUBSERVICE_PROFILE,
     CHINA_MOBILE_PROFILE,
     CHINA_TOWER_EPROC_PROFILE,
     CHINA_UNICOM_PROFILE,
@@ -19,6 +20,7 @@ def test_priority_profiles_are_unique_and_https():
         PlatformId.CHINA_MOBILE,
         PlatformId.CHINA_UNICOM,
         PlatformId.CHINA_TOWER_EPROC,
+        PlatformId.CEBPUBSERVICE,
     }
     for profile in BROWSER_PROFILES.values():
         assert profile.start_url.startswith("https://")
@@ -53,6 +55,17 @@ def test_mobile_candidate_detail_url_patterns(url: str):
     assert validate_detail_url(CHINA_MOBILE_PROFILE, url) == url
 
 
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://bulletin.cebpubservice.com/biddingBulletin/2026-07-10/ea173ca71daa4f73aaa8188ed2fb1ca3.html",
+        "https://bulletin.cebpubservice.com/changeBulletin/2026-03-24/e4c22aa8a6804beba06130b65a45f3b2.html",
+    ],
+)
+def test_ceb_detail_url_patterns(url: str):
+    assert validate_detail_url(CEBPUBSERVICE_PROFILE, url) == url
+
+
 def test_deceptive_and_external_hosts_are_rejected():
     for url in (
         "https://ebid.chinatowercom.cn.evil.example/zgtt/gggs/003001/detail.html",
@@ -65,6 +78,8 @@ def test_deceptive_and_external_hosts_are_rejected():
             validate_navigation_url(CHINA_TOWER_EPROC_PROFILE, url)
 
 
-def test_arbitrary_mobile_url_is_rejected():
+def test_arbitrary_urls_are_rejected():
     with pytest.raises(UnsafeNavigationError):
         validate_detail_url(CHINA_MOBILE_PROFILE, "https://b2b.10086.cn/anything")
+    with pytest.raises(UnsafeNavigationError):
+        validate_detail_url(CEBPUBSERVICE_PROFILE, "https://bulletin.cebpubservice.com/anything")
