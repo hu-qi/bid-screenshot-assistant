@@ -61,6 +61,28 @@ def build_simulation_registry() -> AdapterRegistry:
     return AdapterRegistry([SimulationPlatformAdapter(descriptor) for descriptor in DESCRIPTORS])
 
 
+def build_china_mobile_registry(
+    *,
+    headless: bool = True,
+    timeout_ms: int = 45_000,
+    user_data_dir: Path | None = None,
+) -> AdapterRegistry:
+    """Build an explicit experimental registry containing only the real Mobile adapter."""
+    from bid_screenshot_assistant.adapters.china_mobile import ChinaMobileAdapter
+
+    descriptor = get_descriptor(PlatformId.CHINA_MOBILE)
+    return AdapterRegistry(
+        [
+            ChinaMobileAdapter(
+                descriptor,
+                headless=headless,
+                timeout_ms=timeout_ms,
+                user_data_dir=user_data_dir,
+            )
+        ]
+    )
+
+
 def build_china_tower_eproc_registry(
     *,
     headless: bool = True,

@@ -42,6 +42,17 @@ def test_tower_detail_url_patterns(url: str):
     assert validate_detail_url(CHINA_TOWER_EPROC_PROFILE, url) == url
 
 
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://b2b.10086.cn/b2b/main/viewNoticeContent.html?noticeBean.id=1024001",
+        "https://b2b.10086.cn/b2b/main/viewVendorNoticeContent.html?noticeBean.id=21064",
+    ],
+)
+def test_mobile_candidate_detail_url_patterns(url: str):
+    assert validate_detail_url(CHINA_MOBILE_PROFILE, url) == url
+
+
 def test_deceptive_and_external_hosts_are_rejected():
     for url in (
         "https://ebid.chinatowercom.cn.evil.example/zgtt/gggs/003001/detail.html",
@@ -54,7 +65,6 @@ def test_deceptive_and_external_hosts_are_rejected():
             validate_navigation_url(CHINA_TOWER_EPROC_PROFILE, url)
 
 
-def test_mobile_detail_links_remain_unverified():
-    assert CHINA_MOBILE_PROFILE.detail_url_patterns == ()
+def test_arbitrary_mobile_url_is_rejected():
     with pytest.raises(UnsafeNavigationError):
         validate_detail_url(CHINA_MOBILE_PROFILE, "https://b2b.10086.cn/anything")

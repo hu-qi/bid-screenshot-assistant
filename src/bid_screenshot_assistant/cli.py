@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 from bid_screenshot_assistant.adapters import (
+    build_china_mobile_registry,
     build_china_tower_eproc_registry,
     build_china_unicom_registry,
     build_simulation_registry,
@@ -23,6 +24,15 @@ def build_parser() -> argparse.ArgumentParser:
     demo.add_argument("--query", action="append", required=True, help="Project/query name")
     demo.add_argument("--task-name", default="标讯截图模拟任务")
     demo.add_argument("--artifact-root", type=Path, default=settings.artifact_root)
+
+    mobile = subparsers.add_parser(
+        "mobile",
+        help="Run the experimental China Mobile public-announcement adapter",
+    )
+    _add_experimental_browser_arguments(
+        mobile,
+        default_task_name="中国移动采购与招标网实验任务",
+    )
 
     tower = subparsers.add_parser(
         "tower-eproc",
@@ -103,6 +113,16 @@ def main() -> None:
     args = build_parser().parse_args()
     if args.command == "demo":
         raise SystemExit(asyncio.run(run_demo(args)))
+    if args.command == "mobile":
+        raise SystemExit(
+            asyncio.run(
+                run_experimental_single_platform(
+                    args,
+                    PlatformId.CHINA_MOBILE,
+                    build_china_mobile_registry(**_browser_options(args)),
+                )
+            )
+        )
     if args.command == "tower-eproc":
         raise SystemExit(
             asyncio.run(
