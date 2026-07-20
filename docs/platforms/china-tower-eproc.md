@@ -1,11 +1,12 @@
 # 中国铁塔电子采购平台档案
 
 - Platform ID：`china-tower-eproc`
-- 状态：`entry-verified / list-contract-verified / detail-pattern-verified`
+- 状态：`adapter-implemented / fixture-tested / live-regression-pending`
 - 当前 Adapter：`experimental / disabled`
 - last_verified_at：2026-07-20
 - 官方入口：https://ebid.chinatowercom.cn/
 - 采购公告列表：https://ebid.chinatowercom.cn/zgtt/gggs/003001/detailpage.html
+- 实现报告：[`../reports/china-tower-eproc-implementation-2026-07-20.md`](../reports/china-tower-eproc-implementation-2026-07-20.md)
 
 ## 1. 已核实事实
 
@@ -19,7 +20,7 @@
 | `003003` | 候选人公示 |
 | `003004` | 采购结果公示 |
 
-> 路径编码应在真实浏览器和回归 fixture 中再次确认后固化；其中 `003001` 和 `003005` 已通过公开页面 URL 样例核实。
+> 路径编码应在真实浏览器和回归 Fixture 中再次确认后固化；其中 `003001` 和 `003005` 已通过公开页面 URL 样例核实。
 
 采购公告列表公开展示：
 
@@ -46,15 +47,33 @@ https://ebid.chinatowercom.cn/zgtt/gggs/<category>/<YYYYMMDD>/<uuid-or-id>.html
 
 公开公告浏览不要求登录；采购文件领取、报名、投标、异议等操作通常要求供应商登录及可能的 CA。截图助手只覆盖公开公告证据，不进入交易操作。
 
-## 2. 当前判断
+## 2. 当前实现
 
-这是三个优先平台中最适合作为首个真实 Adapter 的平台：
+已实现：
 
-- 列表筛选字段清晰；
-- 公告分类和详情 URL 模式清晰；
-- 详情正文公开；
-- 登录边界明确；
-- 可以先实现纯浏览器 DOM Adapter，再评估是否需要网络响应辅助解析。
+- Playwright 打开采购公告列表；
+- 列表页文本指纹校验；
+- 按原始名称填写关键词并点击查询；
+- 从渲染后 HTML 提取符合官方模式的详情链接；
+- 标题确定性匹配与排序；
+- 详情页指纹、标题、信息时间、正文摘要与公开附件 URL 解析；
+- 搜索页和详情页全页 PNG；
+- 详情 metadata JSON；
+- `FOUND`、`NOT_FOUND`、`PARTIAL`、`PAGE_CHANGED`、`TIMEOUT`、`PLATFORM_ERROR` 分类；
+- 外部详情链接和外部附件链接过滤；
+- Fixture 和 Fake Browser Driver 契约测试；
+- 显式实验 CLI：`bid-screenshot tower-eproc --acknowledge-experimental`。
+
+当前未实现：
+
+- 省份、时间、行业筛选自动设置；
+- 列表分页；
+- 其他四类公告的运行入口；
+- 公开附件实际下载、MIME 和文件大小校验；
+- 登录后操作；
+- 10+ 真实浏览器样例回归。
+
+因此 Adapter 只能由独立实验 Registry 加载，不能进入默认 Registry，也不能标记为 `pilot` 或 `enabled`。
 
 ## 3. 页面契约
 
@@ -72,11 +91,13 @@ https://ebid.chinatowercom.cn/zgtt/gggs/<category>/<YYYYMMDD>/<uuid-or-id>.html
 1. 打开对应公告分类列表；
 2. 等待筛选区域和列表容器加载；
 3. 输入原始查询名称；
-4. 可选设置省份、时间和行业；
-5. 点击“查询”；
-6. 等待列表刷新、无结果状态或平台错误；
-7. 遍历分页，受 `max_hits`、最大页数和总时长限制；
-8. 只打开符合官方详情 URL 模式的链接。
+4. 点击“查询”；
+5. 等待页面稳定；
+6. 从渲染后页面提取详情链接；
+7. 只打开符合官方详情 URL 模式的链接；
+8. 受 `max_hits` 和总超时限制。
+
+当前版本尚未实现翻页；出现多页结果时只处理当前页。
 
 ### 详情页指纹
 
@@ -84,16 +105,18 @@ https://ebid.chinatowercom.cn/zgtt/gggs/<category>/<YYYYMMDD>/<uuid-or-id>.html
 - 标题非空；
 - 可见“信息时间”；
 - 正文主体非空；
-- 分类编码与发起列表一致或属于允许跳转分类。
+- 分类编码属于允许公告路径。
 
 ## 4. 结果判定
 
-- 命中：标题语义匹配且详情页指纹通过；
-- 未命中：列表刷新完成、查询词保持、结果数为 0 或有明确无结果状态；
-- 部分命中：列表命中但部分详情/附件失败；
-- 页面变化：筛选区或公告链接模式不再符合契约；
-- 登录要求：公开详情异常跳转到身份登录时暂停并标记，不尝试登录；
-- 附件：公开附件可下载则保存，要求身份/付款/领文件则只记录存在性。
+- 命中：列表存在合法详情链接，选中的详情页完成截图与解析；
+- 未命中：搜索完成、无合法详情链接，且存在明确“暂无数据”等页面状态；
+- 部分命中：列表命中，但部分详情截图或解析失败；
+- 页面变化：筛选区、详情 URL、页面指纹或无结果状态无法确认；
+- 平台异常：浏览器或站点出现非契约类技术异常；
+- 超时：Playwright 操作超过设定预算。
+
+严禁把“无链接但也无明确空状态”判定为 `NOT_FOUND`。
 
 ## 5. 安全边界
 
@@ -101,27 +124,53 @@ https://ebid.chinatowercom.cn/zgtt/gggs/<category>/<YYYYMMDD>/<uuid-or-id>.html
 
 - `ebid.chinatowercom.cn`
 
-首页可能链接到电子商城、标证通、旧版门户或备案网站；这些均不属于当前 Adapter 的自动跳转范围。附件下载也必须再次校验域名、文件大小和 MIME 类型。
+首页可能链接到电子商城、标证通、旧版门户或备案网站；这些均不属于当前 Adapter 的自动跳转范围。
 
-## 6. 首批回归样例
+- 仅允许 HTTPS；
+- 详情 URL 必须符合公告路径正则；
+- 外部、欺骗域名和非标准端口不得访问；
+- 附件 URL 必须再次通过官方域名校验；
+- 不进入供应商登录、采购文件领取、付款、投标或异议流程。
 
-正式实现至少准备：
+## 6. 已提交测试资产
 
-- 采购公告：精确标题、标题关键词、随机未命中；
-- 预公示：已知标题；
-- 变更公告：带“变更公告”后缀；
+```text
+tests/fixtures/china_tower_eproc/
+├── list_found.html
+├── list_not_found.html
+└── detail_found.html
+```
+
+覆盖：
+
+- 合法详情链接；
+- 恶意外链过滤；
+- 明确无结果；
+- 标题、日期、正文和附件解析；
+- 详情失败后的 `PARTIAL`；
+- 模糊空页面的 `PAGE_CHANGED`；
+- 实验证据 `simulation=false`。
+
+## 7. 真实回归计划
+
+正式升级到 `pilot` 前至少完成：
+
+- 采购公告：精确标题、关键词、随机未命中；
+- 有附件和无附件详情；
+- 多结果与多页结果；
+- 省份筛选；
+- 近一月筛选；
+- 变更公告；
 - 候选人公示；
 - 采购结果公示；
-- 有附件详情；
-- 无附件详情；
-- 多页结果；
-- 省份筛选；
-- 近一月筛选。
+- 平台异常或超时；
+- 外部跳转和登录边界。
 
-## 7. 下一步任务
+## 8. 下一步任务
 
-1. 通过 Playwright 记录三个分类的 DOM、分页和无结果状态；
-2. 提交脱敏 fixture 和页面指纹；
-3. 实现 `ChinaTowerEprocAdapter` 的列表/详情状态机；
-4. 接入 PNG 全页截图、公开附件下载和 manifest；
-5. 在 10+ 样例通过前保持 `enabled: false`。
+1. 在受控 Chrome 中运行至少 10 个真实样例并保存 Trace 摘要；
+2. 核实真实无结果文案和列表刷新信号；
+3. 实现分页和省份/时间/行业筛选；
+4. 实现公开附件下载的 MIME、大小和哈希校验；
+5. 扩展至变更、候选人、结果和预公示分类；
+6. 达到指标后再将状态从 `experimental` 升级为 `pilot`。
