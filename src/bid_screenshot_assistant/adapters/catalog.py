@@ -7,10 +7,12 @@ DESCRIPTORS = [
     PlatformDescriptor(
         platform_id=PlatformId.CHINA_MOBILE,
         display_name="中国移动采购与招标网",
+        supports_notice_type_filter=True,
     ),
     PlatformDescriptor(
         platform_id=PlatformId.CHINA_UNICOM,
         display_name="中国联通采购与招标网",
+        supports_date_filter=True,
     ),
     PlatformDescriptor(
         platform_id=PlatformId.CHINA_TELECOM,
@@ -24,6 +26,8 @@ DESCRIPTORS = [
     PlatformDescriptor(
         platform_id=PlatformId.CHINA_TOWER_EPROC,
         display_name="中国铁塔电子采购平台",
+        supports_date_filter=True,
+        supports_notice_type_filter=True,
     ),
     PlatformDescriptor(
         platform_id=PlatformId.CEBPUBSERVICE,
