@@ -1,0 +1,22 @@
+{
+  "code": "200",
+  "msg": "操作成功",
+  "data": {
+    "total": 1,
+    "rows": [
+      {
+        "id": "19249ba9-5d33-48e4-b9cb-def134be8824",
+        "title": "惠州市算力中心<font>服务器采购</font>项目结果公告",
+        "description": "惠州市算力中心服务器采购项目公开招标结果公告",
+        "noticeTime": "2026-07-17 16:19:02",
+        "noticeType": "001051",
+        "noticeTypeName": "公开招标中标公告",
+        "channel": "fca71be5-fc0c-45db-96af-f513e9abda9d",
+        "channelName": "采购结果公告",
+        "openTenderCode": "HZBY-2026A002",
+        "regionName": "惠州市",
+        "purchaser": "惠州市政务服务和数据管理局"
+      }
+    ]
+  }
+}
