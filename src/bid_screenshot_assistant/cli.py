@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 from bid_screenshot_assistant.adapters import (
+    build_cebpubservice_registry,
     build_china_mobile_registry,
     build_china_tower_eproc_registry,
     build_china_unicom_registry,
@@ -25,32 +26,18 @@ def build_parser() -> argparse.ArgumentParser:
     demo.add_argument("--task-name", default="标讯截图模拟任务")
     demo.add_argument("--artifact-root", type=Path, default=settings.artifact_root)
 
-    mobile = subparsers.add_parser(
-        "mobile",
-        help="Run the experimental China Mobile public-announcement adapter",
+    commands = (
+        ("mobile", "China Mobile", "中国移动采购与招标网实验任务"),
+        ("tower-eproc", "China Tower", "中国铁塔电子采购平台实验任务"),
+        ("unicom", "China Unicom", "中国联通采购与招标网实验任务"),
+        ("cebpubservice", "CEB Public Service", "中国招标投标公共服务平台实验任务"),
     )
-    _add_experimental_browser_arguments(
-        mobile,
-        default_task_name="中国移动采购与招标网实验任务",
-    )
-
-    tower = subparsers.add_parser(
-        "tower-eproc",
-        help="Run the experimental China Tower public-announcement adapter",
-    )
-    _add_experimental_browser_arguments(
-        tower,
-        default_task_name="中国铁塔电子采购平台实验任务",
-    )
-
-    unicom = subparsers.add_parser(
-        "unicom",
-        help="Run the experimental China Unicom public-announcement adapter",
-    )
-    _add_experimental_browser_arguments(
-        unicom,
-        default_task_name="中国联通采购与招标网实验任务",
-    )
+    for command, label, task_name in commands:
+        sub = subparsers.add_parser(
+            command,
+            help=f"Run the experimental {label} public-announcement adapter",
+        )
+        _add_experimental_browser_arguments(sub, default_task_name=task_name)
     return parser
 
 
@@ -113,33 +100,21 @@ def main() -> None:
     args = build_parser().parse_args()
     if args.command == "demo":
         raise SystemExit(asyncio.run(run_demo(args)))
-    if args.command == "mobile":
+
+    handlers = {
+        "mobile": (PlatformId.CHINA_MOBILE, build_china_mobile_registry),
+        "tower-eproc": (PlatformId.CHINA_TOWER_EPROC, build_china_tower_eproc_registry),
+        "unicom": (PlatformId.CHINA_UNICOM, build_china_unicom_registry),
+        "cebpubservice": (PlatformId.CEBPUBSERVICE, build_cebpubservice_registry),
+    }
+    if args.command in handlers:
+        platform_id, factory = handlers[args.command]
         raise SystemExit(
             asyncio.run(
                 run_experimental_single_platform(
                     args,
-                    PlatformId.CHINA_MOBILE,
-                    build_china_mobile_registry(**_browser_options(args)),
-                )
-            )
-        )
-    if args.command == "tower-eproc":
-        raise SystemExit(
-            asyncio.run(
-                run_experimental_single_platform(
-                    args,
-                    PlatformId.CHINA_TOWER_EPROC,
-                    build_china_tower_eproc_registry(**_browser_options(args)),
-                )
-            )
-        )
-    if args.command == "unicom":
-        raise SystemExit(
-            asyncio.run(
-                run_experimental_single_platform(
-                    args,
-                    PlatformId.CHINA_UNICOM,
-                    build_china_unicom_registry(**_browser_options(args)),
+                    platform_id,
+                    factory(**_browser_options(args)),
                 )
             )
         )
