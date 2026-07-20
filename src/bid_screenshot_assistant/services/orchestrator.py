@@ -24,10 +24,12 @@ class TaskRunner:
         registry: AdapterRegistry,
         artifact_root: Path,
         max_parallel: int = 4,
+        execution_mode: str = "simulation",
     ) -> None:
         self.registry = registry
         self.artifact_root = artifact_root
         self.max_parallel = max(1, max_parallel)
+        self.execution_mode = execution_mode
 
     async def run(self, task: Task) -> RunSummary:
         run_id = uuid4().hex
@@ -108,6 +110,7 @@ class TaskRunner:
                 "finished_at": finished_at,
                 "status": task_status,
                 "counts": dict(counts),
+                "execution_mode": self.execution_mode,
             },
             "items": [item.model_dump(mode="json") for item in items],
         }
@@ -136,10 +139,11 @@ class TaskRunner:
                 "task_id": task.task_id,
                 "run_id": run_id,
                 "generated_at": finished_at,
+                "execution_mode": self.execution_mode,
                 "artifacts": manifest_entries,
             },
         )
-        report = _build_html_report(task, run_id, items, counts)
+        report = _build_html_report(task, run_id, items, counts, self.execution_mode)
         (run_dir / "report.html").write_text(report, encoding="utf-8")
 
         archive_path = self.artifact_root / task.task_id / f"{run_id}.zip"
@@ -154,20 +158,28 @@ class TaskRunner:
             items=items,
             archive_path=str(archive_path),
             counts=dict(counts),
-            metadata={"simulation": True, "platform_count": len(task.request.platform_ids)},
+            metadata={
+                "execution_mode": self.execution_mode,
+                "simulation": self.execution_mode == "simulation",
+                "platform_count": len(task.request.platform_ids),
+            },
         )
 
 
-def _build_html_report(task: Task, run_id: str, items, counts) -> str:
+def _build_html_report(task: Task, run_id: str, items, counts, execution_mode: str) -> str:
     rows = "".join(
         f"<tr><td>{item.query_name}</td><td>{item.platform_id}</td>"
         f"<td>{item.status}</td><td>{item.duration_ms} ms</td>"
         f"<td>{len(item.artifacts)}</td></tr>"
         for item in items
     )
+    if execution_mode == "simulation":
+        mode_note = "本报告由 simulation 模式生成，不代表真实网站查询。"
+    else:
+        mode_note = f"执行模式：{execution_mode}。证据真实性以平台执行项和 manifest 为准。"
     return f"""<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><title>标讯截图执行报告</title>
 <style>body{{font-family:system-ui,sans-serif;margin:32px;color:#172033}}table{{border-collapse:collapse;width:100%}}th,td{{border:1px solid #dce2ea;padding:10px;text-align:left}}th{{background:#f5f7fa}}</style>
 </head><body><h1>{task.request.name}</h1><p>Run ID: {run_id}</p>
-<p>本报告由 simulation 模式生成，不代表真实网站查询。</p>
+<p>{mode_note}</p>
 <pre>{dict(counts)}</pre><table><thead><tr><th>查询名称</th><th>平台</th><th>状态</th><th>耗时</th><th>证据数</th></tr></thead><tbody>{rows}</tbody></table></body></html>"""
