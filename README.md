@@ -2,7 +2,7 @@
 
 输入一个或一批项目名称，系统按配置访问 9 个主流标讯平台，保存搜索结果与公告详情证据，生成可校验的归档包，并通过邮件或 JiuwenSwarm 频道交付。
 
-> 当前阶段：**工程基线 / simulation-first + 双平台 experimental-live**。仓库提供可运行的九平台模拟闭环，以及中国铁塔电子采购平台、中国联通采购与招标网两个实验性 Playwright Adapter。真实 Adapter 均默认关闭，在完成受控浏览器回归前不宣称生产可用。
+> 当前阶段：**工程基线 / simulation-first + 三平台 experimental-live**。仓库提供可运行的九平台模拟闭环，以及中国移动、中国联通、中国铁塔电子采购平台三个实验性 Playwright Adapter。真实 Adapter 均默认关闭，在完成受控浏览器回归前不宣称生产可用。
 
 ## 为什么不是普通标讯聚合器
 
@@ -60,6 +60,19 @@ pip install -e '.[dev,browser]'
 playwright install chromium
 ```
 
+### 中国移动采购与招标网
+
+```bash
+bid-screenshot mobile \
+  --acknowledge-experimental \
+  --query "项目名称" \
+  --headed
+```
+
+中国移动 Adapter 会记录搜索完成信号。首页初始“无匹配数据”或无法证明搜索完成时返回 `PAGE_CHANGED`，不会误报 `NOT_FOUND`。候选详情 URL 仍需真实 Chrome 回归确认。
+
+实现说明：[`docs/reports/china-mobile-implementation-2026-07-20.md`](docs/reports/china-mobile-implementation-2026-07-20.md)。
+
 ### 中国铁塔电子采购平台
 
 ```bash
@@ -91,7 +104,7 @@ bid-screenshot unicom \
 - 多次使用 `--query`：批量查询多个名称；
 - 去掉 `--headed`：无头模式运行。
 
-实验模式在 `summary.json`、`manifest.json` 和报告中标记为 `experimental-live`。两个真实 Adapter 都通过独立 Registry 加载，不会混入默认 simulation Registry。
+实验模式在 `summary.json`、`manifest.json` 和报告中标记为 `experimental-live`。三个真实 Adapter 都通过独立 Registry 加载，不会混入默认 simulation Registry。
 
 ## 目录
 
@@ -116,4 +129,4 @@ bid-screenshot unicom \
 
 ## 当前边界
 
-当前代码不绕过验证码、风控或登录控制，不把模拟快照作为真实公告证据。中国铁塔和中国联通 Adapter 已实现并通过 Fixture/状态机测试，但尚未完成各自 10+ 真实浏览器样例，因此继续保持 `experimental / disabled`。真实 Adapter 必须通过平台回归样例、人工接管路径与合规评审后才能升级为 `pilot` 或 `enabled`。
+当前代码不绕过验证码、风控或登录控制，不把模拟快照作为真实公告证据。中国移动、中国联通和中国铁塔 Adapter 已实现并通过 Fixture/状态机测试，但尚未完成各自 10+ 真实浏览器样例，因此继续保持 `experimental / disabled`。真实 Adapter 必须通过平台回归样例、人工接管路径与合规评审后才能升级为 `pilot` 或 `enabled`。
