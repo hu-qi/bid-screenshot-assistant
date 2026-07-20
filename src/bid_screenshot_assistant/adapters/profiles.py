@@ -138,12 +138,48 @@ CHINA_TOWER_EPROC_PROFILE = PlatformBrowserProfile(
 )
 
 
+CEBPUBSERVICE_PROFILE = PlatformBrowserProfile(
+    platform_id=PlatformId.CEBPUBSERVICE,
+    display_name="中国招标投标公共服务平台",
+    allowed_hosts=("bulletin.cebpubservice.com",),
+    start_url="https://bulletin.cebpubservice.com/",
+    search_url=(
+        "https://bulletin.cebpubservice.com/xxfbcmses/search/"
+        "bulletin.html?categoryId=88&dates=300&page=1&showStatus=1"
+    ),
+    requires_javascript=True,
+    public_search=True,
+    search_placeholders=("请输入关键字", "关键字"),
+    submit_labels=("搜索", "查询", "全文检索"),
+    list_fingerprint=PageFingerprint(
+        required_text=("招标公告",),
+        any_text=("全文检索", "高级搜索", "关键字", "发布时间"),
+        expected_path_prefix="/",
+    ),
+    detail_url_patterns=(
+        r"https://bulletin\.cebpubservice\.com/(?:biddingBulletin|qualifyBulletin|candidateBulletin|resultBulletin|changeBulletin)/\d{4}-\d{2}-\d{2}/[a-fA-F0-9]{32}\.html",
+    ),
+    detail_fingerprint=PageFingerprint(
+        required_text=("发布日期",),
+        any_text=("发布媒介", "来源渠道", "公告内容", "附件链接"),
+        expected_path_prefix="/",
+    ),
+    no_result_markers=("暂无数据", "未查询到相关公告", "没有符合条件的公告", "无匹配数据"),
+    notes=(
+        "Search and detail paths are candidate contracts pending production Chrome regression.",
+        "Captcha, slider, SMS verification, and chain-verification forms are manual boundaries.",
+        "The adapter must not attempt to solve or bypass anti-automation controls.",
+    ),
+)
+
+
 BROWSER_PROFILES: dict[PlatformId, PlatformBrowserProfile] = {
     profile.platform_id: profile
     for profile in (
         CHINA_MOBILE_PROFILE,
         CHINA_UNICOM_PROFILE,
         CHINA_TOWER_EPROC_PROFILE,
+        CEBPUBSERVICE_PROFILE,
     )
 }
 
