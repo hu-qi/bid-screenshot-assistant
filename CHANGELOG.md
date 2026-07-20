@@ -12,3 +12,9 @@
 - 可运行 CLI、FastAPI 管理入口、证据文件生成、SHA-256 manifest 与 ZIP 打包。
 - JiuwenSwarm Skill、SwarmFlow 和 MCP 配置样例。
 - 基线测试与 GitHub Actions。
+- 中国移动、中国联通、中国铁塔电子采购平台的首轮真实入口调查档案。
+- ADR-0004：真实平台优先采用公开浏览器页面契约。
+
+### Changed
+
+- MVP 实现顺序调整为：中国铁塔电子采购平台 → 中国联通 → 中国移动。
