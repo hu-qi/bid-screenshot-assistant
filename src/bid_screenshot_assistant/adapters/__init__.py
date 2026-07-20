@@ -1,6 +1,7 @@
 from bid_screenshot_assistant.adapters.catalog import (
     DESCRIPTORS,
     build_china_tower_eproc_registry,
+    build_china_unicom_registry,
     build_simulation_registry,
     get_descriptor,
 )
@@ -10,6 +11,7 @@ __all__ = [
     "BROWSER_PROFILES",
     "DESCRIPTORS",
     "build_china_tower_eproc_registry",
+    "build_china_unicom_registry",
     "build_simulation_registry",
     "get_browser_profile",
     "get_descriptor",
