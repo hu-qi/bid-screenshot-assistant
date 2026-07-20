@@ -81,3 +81,25 @@ def build_china_tower_eproc_registry(
             )
         ]
     )
+
+
+def build_china_unicom_registry(
+    *,
+    headless: bool = True,
+    timeout_ms: int = 45_000,
+    user_data_dir: Path | None = None,
+) -> AdapterRegistry:
+    """Build an explicit experimental registry containing only the real Unicom adapter."""
+    from bid_screenshot_assistant.adapters.china_unicom import ChinaUnicomAdapter
+
+    descriptor = get_descriptor(PlatformId.CHINA_UNICOM)
+    return AdapterRegistry(
+        [
+            ChinaUnicomAdapter(
+                descriptor,
+                headless=headless,
+                timeout_ms=timeout_ms,
+                user_data_dir=user_data_dir,
+            )
+        ]
+    )
