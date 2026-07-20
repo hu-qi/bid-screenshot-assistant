@@ -34,6 +34,8 @@ DESCRIPTORS = [
     PlatformDescriptor(
         platform_id=PlatformId.CEBPUBSERVICE,
         display_name="中国招标投标公共服务平台",
+        supports_date_filter=True,
+        supports_notice_type_filter=True,
     ),
     PlatformDescriptor(
         platform_id=PlatformId.MIIT,
@@ -67,19 +69,10 @@ def build_china_mobile_registry(
     timeout_ms: int = 45_000,
     user_data_dir: Path | None = None,
 ) -> AdapterRegistry:
-    """Build an explicit experimental registry containing only the real Mobile adapter."""
     from bid_screenshot_assistant.adapters.china_mobile import ChinaMobileAdapter
 
-    descriptor = get_descriptor(PlatformId.CHINA_MOBILE)
     return AdapterRegistry(
-        [
-            ChinaMobileAdapter(
-                descriptor,
-                headless=headless,
-                timeout_ms=timeout_ms,
-                user_data_dir=user_data_dir,
-            )
-        ]
+        [ChinaMobileAdapter(get_descriptor(PlatformId.CHINA_MOBILE), headless=headless, timeout_ms=timeout_ms, user_data_dir=user_data_dir)]
     )
 
 
@@ -89,19 +82,10 @@ def build_china_tower_eproc_registry(
     timeout_ms: int = 45_000,
     user_data_dir: Path | None = None,
 ) -> AdapterRegistry:
-    """Build an explicit experimental registry containing only the real Tower adapter."""
     from bid_screenshot_assistant.adapters.china_tower_eproc import ChinaTowerEprocAdapter
 
-    descriptor = get_descriptor(PlatformId.CHINA_TOWER_EPROC)
     return AdapterRegistry(
-        [
-            ChinaTowerEprocAdapter(
-                descriptor,
-                headless=headless,
-                timeout_ms=timeout_ms,
-                user_data_dir=user_data_dir,
-            )
-        ]
+        [ChinaTowerEprocAdapter(get_descriptor(PlatformId.CHINA_TOWER_EPROC), headless=headless, timeout_ms=timeout_ms, user_data_dir=user_data_dir)]
     )
 
 
@@ -111,17 +95,22 @@ def build_china_unicom_registry(
     timeout_ms: int = 45_000,
     user_data_dir: Path | None = None,
 ) -> AdapterRegistry:
-    """Build an explicit experimental registry containing only the real Unicom adapter."""
     from bid_screenshot_assistant.adapters.china_unicom import ChinaUnicomAdapter
 
-    descriptor = get_descriptor(PlatformId.CHINA_UNICOM)
     return AdapterRegistry(
-        [
-            ChinaUnicomAdapter(
-                descriptor,
-                headless=headless,
-                timeout_ms=timeout_ms,
-                user_data_dir=user_data_dir,
-            )
-        ]
+        [ChinaUnicomAdapter(get_descriptor(PlatformId.CHINA_UNICOM), headless=headless, timeout_ms=timeout_ms, user_data_dir=user_data_dir)]
+    )
+
+
+def build_cebpubservice_registry(
+    *,
+    headless: bool = True,
+    timeout_ms: int = 45_000,
+    user_data_dir: Path | None = None,
+) -> AdapterRegistry:
+    """Build an explicit experimental registry containing only the public CEB adapter."""
+    from bid_screenshot_assistant.adapters.cebpubservice import CebpubserviceAdapter
+
+    return AdapterRegistry(
+        [CebpubserviceAdapter(get_descriptor(PlatformId.CEBPUBSERVICE), headless=headless, timeout_ms=timeout_ms, user_data_dir=user_data_dir)]
     )
