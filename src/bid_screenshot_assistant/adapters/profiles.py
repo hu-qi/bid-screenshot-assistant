@@ -173,6 +173,39 @@ CEBPUBSERVICE_PROFILE = PlatformBrowserProfile(
 )
 
 
+GD_GP_PROFILE = PlatformBrowserProfile(
+    platform_id=PlatformId.GD_GP,
+    display_name="广东政府采购智慧云平台",
+    allowed_hosts=("gdgpo.czt.gd.gov.cn",),
+    start_url="https://gdgpo.czt.gd.gov.cn/",
+    search_url="https://gdgpo.czt.gd.gov.cn/gpcms/rest/web/v2/info/selectInfoForIndex",
+    requires_javascript=True,
+    public_search=True,
+    search_placeholders=("请输入关键词", "请输入公告名称"),
+    submit_labels=("搜索", "查询"),
+    list_fingerprint=PageFingerprint(
+        required_text=("操作成功",),
+        any_text=("rows", "total", "title"),
+        expected_path_prefix="/gpcms/rest/web/v2/info/",
+    ),
+    detail_url_patterns=(
+        r"https://gdgpo\.czt\.gd\.gov\.cn/gpcms/rest/web/v2/info/getInfoById\?id=[A-Za-z0-9-]+",
+        r"https://gdgpo\.czt\.gd\.gov\.cn/(?:noticeGd|articleGd|articleRedHeadGd|noticeKjxyGd)\?.*id=[A-Za-z0-9-]+.*",
+    ),
+    detail_fingerprint=PageFingerprint(
+        required_text=("操作成功",),
+        any_text=("content", "noticeTime", "title"),
+        expected_path_prefix="/",
+    ),
+    no_result_markers=("\"rows\":[]", "\"total\":0"),
+    notes=(
+        "The public JSON search and detail endpoints are primary structured evidence contracts.",
+        "Portal history routes may return 403 when opened directly and are treated as enhanced evidence.",
+        "The adapter does not log in to the electronic marketplace or transaction workbench.",
+    ),
+)
+
+
 BROWSER_PROFILES: dict[PlatformId, PlatformBrowserProfile] = {
     profile.platform_id: profile
     for profile in (
@@ -180,6 +213,7 @@ BROWSER_PROFILES: dict[PlatformId, PlatformBrowserProfile] = {
         CHINA_UNICOM_PROFILE,
         CHINA_TOWER_EPROC_PROFILE,
         CEBPUBSERVICE_PROFILE,
+        GD_GP_PROFILE,
     )
 }
 
