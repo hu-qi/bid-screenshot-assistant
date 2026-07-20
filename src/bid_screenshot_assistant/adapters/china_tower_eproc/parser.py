@@ -121,6 +121,8 @@ def parse_detail_page(
     for link in soup.find_all("a", href=True):
         href = str(link.get("href") or "").strip()
         absolute_url = urljoin(source_url, href)
+        if not profile.is_allowed_host(absolute_url):
+            continue
         label = normalized_text(link.get_text(" ", strip=True)).lower()
         path = absolute_url.lower().split("?", 1)[0]
         if "附件" not in label and not path.endswith(_ATTACHMENT_SUFFIXES):
