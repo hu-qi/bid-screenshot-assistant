@@ -1,5 +1,6 @@
 from bid_screenshot_assistant.adapters.catalog import (
     DESCRIPTORS,
+    build_cebpubservice_registry,
     build_china_mobile_registry,
     build_china_tower_eproc_registry,
     build_china_unicom_registry,
@@ -11,6 +12,7 @@ from bid_screenshot_assistant.adapters.profiles import BROWSER_PROFILES, get_bro
 __all__ = [
     "BROWSER_PROFILES",
     "DESCRIPTORS",
+    "build_cebpubservice_registry",
     "build_china_mobile_registry",
     "build_china_tower_eproc_registry",
     "build_china_unicom_registry",
